@@ -1,9 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const SiteHeader = () => {
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -16,18 +18,21 @@ const SiteHeader = () => {
           <NavLink to="/catalog" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}>Catalog</NavLink>
           <NavLink to="/seller" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}>Seller</NavLink>
           <NavLink to="/cart" className={({isActive}) => isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}>Cart</NavLink>
-          <Button
-            variant="outline"
-            onClick={() =>
-              toast({
-                title: "Login & roles",
-                description:
-                  "Connect Supabase to enable real authentication for sellers and customers.",
-              })
-            }
-          >
-            <Link to="/login">Login</Link>
-          </Button>
+          {user ? (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await signOut();
+                toast({ title: "Logged out" });
+              }}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Button variant="outline">
+              <Link to="/auth">Login</Link>
+            </Button>
+          )}
         </nav>
       </div>
     </header>

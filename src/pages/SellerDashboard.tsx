@@ -4,11 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import p1 from "@/assets/products/product-1.jpg";
-
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 const SellerDashboard = () => {
   const { addProduct } = useShop();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!user) navigate("/auth");
+  }, [user, navigate]);
+
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");

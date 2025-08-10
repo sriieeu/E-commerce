@@ -12,30 +12,35 @@ import Catalog from "./pages/Catalog";
 import Cart from "./pages/Cart";
 import SellerDashboard from "./pages/SellerDashboard";
 import Login from "./pages/Login";
+import { AuthProvider } from "./context/AuthContext";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
-      <ShopProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <SiteHeader />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/catalog" element={<Catalog />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/seller" element={<SellerDashboard />} />
-              <Route path="/login" element={<Login />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ShopProvider>
+      <AuthProvider>
+        <ShopProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <SiteHeader />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/catalog" element={<Catalog />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/seller" element={<SellerDashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/auth" element={<Auth />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ShopProvider>
+      </AuthProvider>
     </HelmetProvider>
   </QueryClientProvider>
 );
