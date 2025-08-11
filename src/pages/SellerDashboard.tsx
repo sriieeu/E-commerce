@@ -8,13 +8,32 @@ import { useState, useEffect } from "react";
 import p1 from "@/assets/products/product-1.jpg";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 const SellerDashboard = () => {
   const { addProduct } = useShop();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   useEffect(() => {
-    if (!user) navigate("/auth");
-  }, [user, navigate]);
+    const guard = async () => {
+      if (!user) {
+        navigate("/auth", { replace: true });
+        return;
+      }
+      const { data, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'seller' });
+      if (error) {
+        toast({ title: "Access error", description: error.message });
+        navigate("/auth", { replace: true });
+        return;
+      }
+      if (!data) {
+        toast({ title: "Seller access required", description: "Register as a seller to access this page." });
+        navigate("/auth", { replace: true });
+      }
+    };
+    guard();
+  }, [user, navigate, toast]);
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
