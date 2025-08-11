@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
@@ -13,12 +14,28 @@ const Auth = () => {
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [accountType, setAccountType] = useState<"customer" | "seller">("customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    if (user) navigate("/", { replace: true });
-  }, [user, navigate]);
+    if (!user) return;
+    const maybeGrantSeller = async () => {
+      try {
+        const pending = localStorage.getItem("pendingSellerGrant");
+        if (pending === "true") {
+          await supabase.rpc("grant_seller_role");
+          localStorage.removeItem("pendingSellerGrant");
+          toast({ title: "Seller setup complete", description: "Your account now has seller access." });
+        }
+      } catch (e: any) {
+        toast({ title: "Seller setup failed", description: e?.message ?? "Please try again." });
+      } finally {
+        navigate("/", { replace: true });
+      }
+    };
+    maybeGrantSeller();
+  }, [user, navigate, toast]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +44,15 @@ const Auth = () => {
       if (error) {
         toast({ title: "Login failed", description: error.message });
       } else {
-        toast({ title: "Welcome back!", description: "You're logged in." });
+        if (accountType === "seller") {
+          try {
+            await supabase.rpc("grant_seller_role");
+          } catch (err: any) {
+            // non-blocking; role grant can be attempted later
+            console.error(err);
+          }
+        }
+        toast({ title: "Welcome back!", description: `Logged in as ${accountType}.` });
         navigate("/", { replace: true });
       }
     } else {
@@ -35,7 +60,11 @@ const Auth = () => {
       if (error) {
         toast({ title: "Signup failed", description: error.message });
       } else {
-        toast({ title: "Check your email", description: "Confirm your address to complete signup." });
+        if (accountType === "seller") {
+          // Complete seller role grant after the first verified login
+          localStorage.setItem("pendingSellerGrant", "true");
+        }
+        toast({ title: "Check your email", description: `Confirm your address to complete ${accountType} registration.` });
       }
     }
   };
@@ -43,18 +72,34 @@ const Auth = () => {
   return (
     <main className="container mx-auto py-8">
       <Helmet>
-        <title>Login or Sign Up – NovaShop</title>
-        <meta name="description" content="Login or sign up to NovaShop to buy products or sell as a vendor." />
+        <title>Customer or Seller Login – NovaShop</title>
+        <meta name="description" content="Login or register as a customer or seller on NovaShop to shop or start selling." />
         <link rel="canonical" href={window.location.origin + "/auth"} />
       </Helmet>
-      <h1 className="text-3xl font-bold mb-6">Login or Sign Up</h1>
+      <h1 className="text-3xl font-bold mb-6">{mode === "login" ? "Login" : "Register"} as {accountType === "seller" ? "Seller" : "Customer"}</h1>
       <section className="max-w-md grid gap-6">
+        <div className="flex gap-2">
+          <Button type="button" variant={accountType === "customer" ? "default" : "outline"} onClick={() => setAccountType("customer")}>
+            Customer
+          </Button>
+          <Button type="button" variant={accountType === "seller" ? "default" : "outline"} onClick={() => setAccountType("seller")}>
+            Seller
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button type="button" variant={mode === "login" ? "default" : "outline"} onClick={() => setMode("login")}>
             Login
           </Button>
           <Button type="button" variant={mode === "signup" ? "default" : "outline"} onClick={() => setMode("signup")}>
             Sign Up
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={() => { setAccountType("customer"); setMode("signup"); }}>
+            Register as Customer
+          </Button>
+          <Button type="button" variant="outline" onClick={() => { setAccountType("seller"); setMode("signup"); }}>
+            Register as Seller
           </Button>
         </div>
         <form onSubmit={onSubmit} className="grid gap-4">
@@ -67,7 +112,11 @@ const Auth = () => {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <Button type="submit" variant="hero">{mode === "login" ? "Login" : "Create account"}</Button>
-          <p className="text-sm text-muted-foreground">By continuing, you agree to our terms. Email signups will redirect back to this site.</p>
+          {accountType === "seller" ? (
+            <p className="text-sm text-muted-foreground">Seller accounts can add products and manage orders. Email verification is required to finish setup.</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Customers can browse and purchase products. Email signups will redirect back to this site.</p>
+          )}
         </form>
       </section>
     </main>
@@ -75,3 +124,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
