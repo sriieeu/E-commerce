@@ -26,6 +26,9 @@ const ProductCard = ({ product, onAdd, showActions = true }: Props) => {
       <CardContent>
         <h3 className="font-semibold">{product.title}</h3>
         <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+        {product.seller_name && (
+          <p className="text-xs text-muted-foreground mt-1">by {product.seller_name}</p>
+        )}
       </CardContent>
       <CardFooter className="flex items-center justify-between">
         <span className="font-semibold">${(product.price / 100).toFixed(2)}</span>

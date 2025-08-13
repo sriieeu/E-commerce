@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import p1 from "@/assets/products/product-1.jpg";
 import p2 from "@/assets/products/product-2.jpg";
 import p3 from "@/assets/products/product-3.jpg";
@@ -9,7 +10,8 @@ export type Product = {
   description: string;
   price: number; // in cents
   image: string;
-  seller?: string;
+  seller_name?: string;
+  seller_id?: string;
 };
 
 export type CartItem = {
@@ -19,49 +21,79 @@ export type CartItem = {
 
 interface ShopContextValue {
   products: Product[];
-  addProduct: (product: Omit<Product, "id">) => void;
+  addProduct: (product: Omit<Product, "id" | "seller_id">) => Promise<void>;
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   total: number; // in cents
+  loading: boolean;
+  fetchProducts: () => Promise<void>;
 }
 
 const ShopContext = createContext<ShopContextValue | undefined>(undefined);
 
-const initialProducts: Product[] = [
-  {
-    id: crypto.randomUUID(),
-    title: "Sonic Headphones",
-    description: "Immersive sound with noise cancellation.",
-    price: 12999,
-    image: p1,
-    seller: "Acme Audio",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Pulse Smart Watch",
-    description: "Health tracking with vibrant AMOLED display.",
-    price: 9999,
-    image: p2,
-    seller: "Pulse Co.",
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Echo Mini Speaker",
-    description: "Rich sound in a compact form.",
-    price: 5999,
-    image: p3,
-    seller: "EchoLabs",
-  },
-];
-
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addProduct = (product: Omit<Product, "id">) => {
-    setProducts((prev) => [{ id: crypto.randomUUID(), ...product }, ...prev]);
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const mappedProducts: Product[] = (data || []).map(item => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || "",
+        price: item.price,
+        image: item.image || p1,
+        seller_name: item.seller_name || "Unknown Seller",
+        seller_id: item.seller_id
+      }));
+      
+      setProducts(mappedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const addProduct = async (product: Omit<Product, "id" | "seller_id">) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('products')
+        .insert({
+          title: product.title,
+          description: product.description,
+          price: product.price,
+          image: product.image,
+          seller_id: user.id,
+          seller_name: product.seller_name || "You"
+        });
+
+      if (error) throw error;
+      
+      // Refresh products after adding
+      await fetchProducts();
+    } catch (error) {
+      console.error('Error adding product:', error);
+      throw error;
+    }
   };
 
   const addToCart = (product: Product) => {
@@ -87,7 +119,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [cart]
   );
 
-  const value = { products, addProduct, cart, addToCart, removeFromCart, clearCart, total };
+  const value = { products, addProduct, cart, addToCart, removeFromCart, clearCart, total, loading, fetchProducts };
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 };

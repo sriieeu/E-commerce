@@ -6,7 +6,7 @@ import ProductCard from "@/components/catalog/ProductCard";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const { products, addToCart } = useShop();
+  const { products, addToCart, loading } = useShop();
   return (
     <main>
       <Helmet>
@@ -21,9 +21,19 @@ const Index = () => {
           <Button asChild variant="link"><Link to="/catalog">View all</Link></Button>
         </div>
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {products.slice(0,3).map((p) => (
-            <ProductCard key={p.id} product={p} onAdd={addToCart} />
-          ))}
+          {loading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="h-80 bg-muted animate-pulse rounded-lg"></div>
+            ))
+          ) : products.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <p className="text-muted-foreground">No products available yet.</p>
+            </div>
+          ) : (
+            products.slice(0,3).map((p) => (
+              <ProductCard key={p.id} product={p} onAdd={addToCart} />
+            ))
+          )}
         </div>
       </section>
     </main>

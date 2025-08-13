@@ -49,19 +49,24 @@ const SellerDashboard = () => {
     description: description || "Your description will appear here.",
     price: previewPrice,
     image: image || p1,
-    seller: "You",
+    seller_name: "You",
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = Math.round(parseFloat(price || "0") * 100);
     const n = Math.max(1, parseInt(count || "1", 10));
     if (!title || !parsed) return;
-    for (let i = 0; i < n; i++) {
-      addProduct({ title, price: parsed, description, image: image || p1, seller: "You" });
+    
+    try {
+      for (let i = 0; i < n; i++) {
+        await addProduct({ title, price: parsed, description, image: image || p1, seller_name: "You" });
+      }
+      toast({ title: "Product added", description: n > 1 ? `${n} items added to catalog.` : `${title} added to catalog.` });
+      setTitle(""); setPrice(""); setDescription(""); setImage(""); setCount("1");
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to add product. Please try again.", variant: "destructive" });
     }
-    toast({ title: "Product added", description: n > 1 ? `${n} items added to catalog.` : `${title} added to catalog.` });
-    setTitle(""); setPrice(""); setDescription(""); setImage(""); setCount("1");
   };
 
   return (
