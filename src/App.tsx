@@ -12,6 +12,7 @@ import Catalog from "./pages/Catalog";
 import Cart from "./pages/Cart";
 import SellerDashboard from "./pages/SellerDashboard";
 import Login from "./pages/Login";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import { AuthProvider } from "./context/AuthContext";
 import Auth from "./pages/Auth";
 
@@ -34,6 +35,7 @@ const App = () => (
                 <Route path="/seller" element={<SellerDashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

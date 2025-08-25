@@ -2,16 +2,32 @@ import { Helmet } from "react-helmet-async";
 import { useShop } from "@/context/ShopContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
   const { cart, removeFromCart, total, clearCart } = useShop();
   const { toast } = useToast();
 
-  const handleCheckout = () => {
-    toast({
-      title: "Checkout requires setup",
-      description: "Connect Supabase and add your Stripe Secret Key to enable real payments.",
-    });
+  const handleCheckout = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { cartItems: cart }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Checkout failed",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -39,11 +55,21 @@ const Cart = () => {
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between">
-            <p className="text-lg font-semibold">Total: ${(total / 100).toFixed(2)}</p>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={clearCart}>Clear</Button>
-              <Button onClick={handleCheckout} variant="hero">Checkout</Button>
+          <div className="space-y-4">
+            <div className="text-right space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Subtotal: ${(total / 100).toFixed(2)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Platform Fee (1%): ${((total * 0.01) / 100).toFixed(2)}
+              </p>
+              <p className="text-lg font-semibold">
+                Total: ${((total + (total * 0.01)) / 100).toFixed(2)}
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={clearCart}>Clear Cart</Button>
+              <Button onClick={handleCheckout} variant="hero">Checkout with Stripe</Button>
             </div>
           </div>
         </div>
