@@ -17,6 +17,7 @@ const Auth = () => {
   const [accountType, setAccountType] = useState<"customer" | "seller">("customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -69,6 +70,30 @@ const Auth = () => {
     }
   };
 
+  const resendVerification = async () => {
+    if (!email) {
+      toast({ title: "Enter email first", description: "Please enter your email address to resend verification." });
+      return;
+    }
+    
+    setIsResending(true);
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`
+      }
+    });
+    
+    setIsResending(false);
+    
+    if (error) {
+      toast({ title: "Resend failed", description: error.message });
+    } else {
+      toast({ title: "Email sent!", description: "Check your inbox for a new verification link." });
+    }
+  };
+
   return (
     <main className="container mx-auto py-8">
       <Helmet>
@@ -118,6 +143,23 @@ const Auth = () => {
             <p className="text-sm text-muted-foreground">Customers can browse and purchase products. Email signups will redirect back to this site.</p>
           )}
         </form>
+        
+        {mode === "signup" && (
+          <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+            <p className="text-sm text-muted-foreground mb-2">
+              Verification link expired or didn't receive it?
+            </p>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={resendVerification}
+              disabled={isResending}
+              className="w-full"
+            >
+              {isResending ? "Sending..." : "Resend Verification Email"}
+            </Button>
+          </div>
+        )}
       </section>
     </main>
   );
