@@ -1,7 +1,7 @@
 # 🛒 E-commerce App
 
-A modern, full-stack e-commerce platform built with **Vite, React, TypeScript, Tailwind CSS, Supabase, and Stripe**.  
-This project demonstrates user authentication, product management, shopping cart functionality, and payment integration.
+Full-stack e-commerce platform built with **Vite, React, TypeScript, Tailwind CSS, Supabase and Stripe**.  
+This project demonstrates user authentication, product management, shopping cart functionality and payment integration.
 
 
 
