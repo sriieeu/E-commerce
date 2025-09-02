@@ -18,6 +18,6 @@ This project demonstrates user authentication, product management, shopping cart
 
 - VITE_SUPABASE_URL=your_supabase_url
 - VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-- -VITE_STRIPE_PUBLIC_KEY=your_stripe_public_key (if applicable)
+- STRIPE_PUBLIC_KEY=your_stripe_public_key (if applicable)
 
 
